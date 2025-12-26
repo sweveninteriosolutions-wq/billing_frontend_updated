@@ -1,73 +1,118 @@
-# Welcome to your Lovable project
+# Varasidhi Furnitures – Billing & Inventory ERP
 
-## Project info
+A professional Billing & Inventory ERP system designed specifically for furniture businesses.  
+This application helps manage invoices, inventory, suppliers, GRN, reports, and role-based access in a single unified system.
 
-**URL**: https://lovable.dev/projects/6bf4c400-3f70-4304-95c1-7bad00a69209
+---
 
-## How can I edit this code?
+## Project Overview
 
-There are several ways of editing your application.
+This ERP is built for real-world furniture showroom and warehouse operations, focusing on:
 
-**Use Lovable**
+- Billing & invoicing
+- Inventory and stock tracking
+- Supplier & GRN management
+- Role-based dashboards
+- Secure authentication
+- Scalable, maintainable frontend architecture
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/6bf4c400-3f70-4304-95c1-7bad00a69209) and start prompting.
+---
 
-Changes made via Lovable will be committed automatically to this repo.
+## Tech Stack
 
-**Use your preferred IDE**
+This project is built using:
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- **React** (with TypeScript)
+- **Vite** (fast development & build)
+- **Tailwind CSS**
+- **shadcn/ui**
+- **React Router**
+- **Modern component-based architecture**
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+---
 
-Follow these steps:
+## Getting Started (Local Development)
+
+### Prerequisites
+
+- Node.js (v18+ recommended)
+- npm (or pnpm/yarn)
+
+### Setup Instructions
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# 1. Clone the repository
+git clone <YOUR_GIT_REPOSITORY_URL>
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# 2. Navigate to the project directory
+cd <PROJECT_DIRECTORY>
 
-# Step 3: Install the necessary dependencies.
-npm i
+# 3. Install dependencies
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# 4. Start the development server
 npm run dev
+````
+
+The application will be available at:
+
+```
+http://localhost:5173
 ```
 
-**Edit a file directly in GitHub**
+---
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Project Structure (High Level)
 
-**Use GitHub Codespaces**
+```text
+src/
+ ├─ api/            # API clients & services
+ ├─ components/     # Reusable UI components
+ ├─ pages/          # Page-level components
+ ├─ providers/      # Context providers (Auth, Theme, etc.)
+ ├─ routes/         # Route definitions & guards
+ ├─ styles/         # Global styles
+ └─ main.tsx        # App entry point
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+---
 
-## What technologies are used for this project?
+## Authentication & Roles
 
-This project is built with:
+* Secure login with access & refresh tokens
+* Role-based access control (Admin, Inventory, Sales, etc.)
+* Protected routes for authenticated users
+* Public landing and login pages
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+---
 
-## How can I deploy this project?
+## Deployment
 
-Simply open [Lovable](https://lovable.dev/projects/6bf4c400-3f70-4304-95c1-7bad00a69209) and click on Share -> Publish.
+This application can be deployed using any standard frontend hosting provider:
 
-## Can I connect a custom domain to my Lovable project?
+* Vercel
+* Netlify
+* AWS S3 + CloudFront
+* Nginx / Apache
 
-Yes, you can!
+### Production Build
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+```sh
+npm run build
+```
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+The output will be generated in the `dist/` directory.
+
+---
+
+## Branding & Customization
+
+This ERP is branded for **Varasidhi Furnitures**.
+Logos, colors, and metadata can be customized if required for white-label or multi-tenant usage.
+
+---
+
+## License
+
+© 2025 Varasidhi Furnitures.
+All rights reserved.
