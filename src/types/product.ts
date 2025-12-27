@@ -3,6 +3,7 @@ export type Product = {
   sku: string;
   name: string;
   category?: string | null;
+  hsn_code: number;
   price: string; // Decimal from backend → string
   min_stock_threshold: number;
   supplier_id?: number | null;

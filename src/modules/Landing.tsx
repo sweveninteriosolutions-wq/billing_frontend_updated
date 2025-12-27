@@ -20,7 +20,7 @@ export default function Landing() {
             <img src={logo} alt="Vara Shidi Logo" className="h-8 w-32" />
           </div>
 
-          <Button onClick={() => navigate('/login')} className="gap-2">
+          <Button onClick={() => navigate('/')} className="gap-2">
             Login <ArrowRight className="h-4 w-4" />
           </Button>
         </div>

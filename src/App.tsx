@@ -17,6 +17,8 @@ import UserActivityPage from "@/modules/admin/pages/UserActivityPage";
 import DiscountsPage from "@/modules/admin/pages/DiscountsPage";
 
 import CustomersPage from "@/modules/billing/pages/CustomersPage"
+import QuotationsPage from "./modules/billing/pages/QuotationsPage";
+
 
 import SuppliersPage from "./modules/inventory/pages/SuppliersPage";
 import ProductsPage from "./modules/inventory/pages/ProductsPage"
@@ -44,6 +46,8 @@ const App = () => {
       <Route path="/admin/discount" element={<DiscountsPage />} />
       
       <Route path="/billing/customers" element={<CustomersPage />} />
+      <Route path="/billing/quotations" element={<QuotationsPage />} />
+      
 
       <Route path="/inventory/suppliers" element={<SuppliersPage />} />
       <Route path="/inventory/products" element={<ProductsPage />} />

@@ -8,7 +8,7 @@ export default function Dashboard() {
   if (isLoading) return null;
 
   if (!session) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/" replace />;
   }
 
   switch (session.role) {
@@ -21,6 +21,6 @@ export default function Dashboard() {
     case "inventory":
       return <Navigate to="/dashboard/inventory" replace />;
     default:
-      return <Navigate to="/login" replace />;
+      return <Navigate to="/" replace />;
   }
 }

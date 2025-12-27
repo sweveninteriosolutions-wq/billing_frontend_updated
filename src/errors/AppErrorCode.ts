@@ -39,7 +39,7 @@ export type AppErrorCode =
   | 'STOCK_TRANSFER_INVALID_STATUS'
 
   // =========================
-  // GRN (NEW)
+  // GRN
   // =========================
   | 'GRN_NOT_FOUND'
   | 'GRN_INVALID_STATUS'
@@ -53,7 +53,18 @@ export type AppErrorCode =
   | 'NO_CHANGES_DETECTED'
 
   // =========================
+  // QUOTATION
+  // =========================
+  | 'QUOTATION_NOT_FOUND'
+  | 'QUOTATION_DUPLICATE_DRAFT'
+  | 'QUOTATION_INVALID_STATE'
+  | 'QUOTATION_VERSION_CONFLICT'
+  | 'QUOTATION_CANNOT_APPROVE'
+  | 'QUOTATION_CANNOT_DELETE'
+
+  // =========================
   // GENERIC
   // =========================
   | 'VALIDATION_ERROR'
-  | 'NETWORK_ERROR';
+  | 'NETWORK_ERROR'
+  | 'UNSAVED_CHANGES';
