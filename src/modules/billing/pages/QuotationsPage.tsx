@@ -28,28 +28,13 @@ export default function QuotationPage() {
   const handleError = useGlobalError();
   const confirm = useConfirm();
 
-  /* =========================
-     PAGINATION
-  ========================= */
-  const {
-    page,
-    pageSize,
-    setPage,
-    setPageSize,
-    reset,
-  } = usePagination({
+  const { page, pageSize, setPage, setPageSize, reset } = usePagination({
     initialPage: 1,
     initialPageSize: DEFAULT_PAGE_SIZE,
   });
 
-  /* =========================
-     FILTERS
-  ========================= */
   const [includeDeleted, setIncludeDeleted] = useState(false);
 
-  /* =========================
-     DATA
-  ========================= */
   const { data, isLoading } = useQuotations({
     page,
     page_size: pageSize,
@@ -57,24 +42,16 @@ export default function QuotationPage() {
   });
 
   const items = data?.items ?? [];
+  const total = data?.total ?? 0; // ✅ FIX: use backend total
 
-  /* =========================
-     MUTATIONS
-  ========================= */
   const convert = useConvertQuotation();
 
-  /* =========================
-     DIALOG STATE
-  ========================= */
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] =
     useState<'create' | 'view' | 'edit'>('create');
   const [selectedQuotation, setSelectedQuotation] =
     useState<QuotationView | null>(null);
 
-  /* =========================
-     HANDLERS
-  ========================= */
   const handleCreate = () => {
     setSelectedQuotation(null);
     setDialogMode('create');
@@ -110,55 +87,40 @@ export default function QuotationPage() {
     }
   };
 
-  const toggleIncludeDeleted = (checked: boolean) => {
-    setIncludeDeleted(checked);
-    setPage(1);
+  const handleToggleDeleted = (checked: boolean | string) => {
+    setIncludeDeleted(checked === true);
+    reset();
   };
 
-  /* =========================
-     STATS
-  ========================= */
-  const total = items.length;
   const drafts = items.filter(i => i.status === 'draft').length;
   const approved = items.filter(i => i.status === 'approved').length;
 
-  /* =========================
-     RENDER
-  ========================= */
   return (
     <div className="space-y-6">
       {/* HEADER */}
-      {/* HEADER */}
-<div className="flex items-center justify-between">
-  <div>
-    <h1 className="text-3xl font-bold">
-      Quotations
-    </h1>
-    <p className="text-muted-foreground">
-      Create, approve and convert quotations
-    </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Quotations</h1>
+          <p className="text-muted-foreground">
+            Create, approve and convert quotations
+          </p>
 
-    {/* FILTER */}
-    <div className="flex items-center gap-2 mt-2">
-      <Checkbox
-        checked={includeDeleted}
-        onCheckedChange={(checked) => {
-          setIncludeDeleted(Boolean(checked));
-          reset();
-        }}
-      />
-      <span className="text-sm text-muted-foreground">
-        Include deleted quotations
-      </span>
-    </div>
-  </div>
+          <div className="flex items-center gap-2 mt-2">
+            <Checkbox
+              checked={includeDeleted}
+              onCheckedChange={handleToggleDeleted}
+            />
+            <span className="text-sm text-muted-foreground">
+              Include deleted quotations
+            </span>
+          </div>
+        </div>
 
-  <Button onClick={handleCreate}>
-    <Plus className="mr-2 h-4 w-4" />
-    New Quotation
-  </Button>
-</div>
-
+        <Button onClick={handleCreate}>
+          <Plus className="mr-2 h-4 w-4" />
+          New Quotation
+        </Button>
+      </div>
 
       {/* STATS */}
       <div className="grid gap-4 md:grid-cols-3">
@@ -168,8 +130,7 @@ export default function QuotationPage() {
       </div>
 
       <Card>
-        <CardHeader>
-
+        <CardHeader /> {/* ✅ FIX: properly closed */}
         <CardContent>
           <QuotationTable
             items={items}
@@ -181,20 +142,20 @@ export default function QuotationPage() {
           />
         </CardContent>
       </Card>
-      {total >= 0 && (
-          <div className="mt-auto pt-4">
-            <TablePagination
-              page={page}
-              pageSize={pageSize}
-              total={total}
-              onPageChange={setPage}
-              onPageSizeChange={(size) => {
-                setPageSize(size);
-                reset();
-              }}
-            />
-          </div>
-        )}
+
+      {/* PAGINATION */}
+      <div className="mt-auto pt-4">
+        <TablePagination
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          onPageChange={setPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            reset();
+          }}
+        />
+      </div>
 
       {/* CONFIRM */}
       {confirm.open && (
@@ -216,5 +177,3 @@ export default function QuotationPage() {
     </div>
   );
 }
-
-
