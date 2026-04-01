@@ -85,7 +85,15 @@ export const cancelInvoice = async (id: number): Promise<InvoiceOut> => {
   return res.data;
 };
 
-export const downloadInvoicePdf = (id: number): string => {
+export const downloadInvoicePdf = async (id: number): Promise<void> => {
   const base = import.meta.env.VITE_API_URL || "";
-  return `${base}/invoices/${id}/pdf`;
+  const token = localStorage.getItem("access_token");
+  const res = await fetch(`${base}/pdf/invoice/${id}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) throw new Error("Failed to download invoice PDF");
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  window.open(url, "_blank");
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
 };

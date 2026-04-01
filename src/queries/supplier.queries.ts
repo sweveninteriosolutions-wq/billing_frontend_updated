@@ -24,8 +24,8 @@ export const SUPPLIER_KEYS = {
           typeof params.is_deleted === 'boolean'
             ? params.is_deleted
             : null,
-        page: params.page ?? 20,
-        page_size: params.page_size ?? 0,
+        page: params.page ?? 1,
+        page_size: params.page_size ?? 20,
         sort_by: params.sort_by ?? 'created_at',
         sort_order: params.sort_order ?? 'desc',
       },

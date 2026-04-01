@@ -28,10 +28,9 @@ const STATUS_COLOR: Record<string, string> = {
 export default function InvoiceViewContent({ invoice, isOpen }: Props) {
   const { data, isLoading } = useInvoice(invoice?.id ?? 0, isOpen && !!invoice);
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!data) return;
-    const url = downloadInvoicePdf(data.id);
-    window.open(url, '_blank');
+    await downloadInvoicePdf(data.id);
   };
 
   if (isLoading) {

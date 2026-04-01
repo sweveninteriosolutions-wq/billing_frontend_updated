@@ -117,3 +117,16 @@ export const convertQuotationToInvoice = async (
   );
   return res.data;
 };
+
+export const downloadQuotationPdf = async (id: number): Promise<void> => {
+  const base = import.meta.env.VITE_API_URL || "";
+  const token = localStorage.getItem("access_token");
+  const res = await fetch(`${base}/pdf/quotation/${id}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) throw new Error("Failed to download quotation PDF");
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  window.open(url, "_blank");
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+};

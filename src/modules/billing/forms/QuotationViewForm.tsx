@@ -1,6 +1,9 @@
 'use client';
 
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { FileDown } from 'lucide-react';
+import { downloadQuotationPdf } from '@/api/quotation.api';
 
 type Props = {
   data?: any;
@@ -36,9 +39,19 @@ export default function QuotationViewForm({
           </p>
         </div>
 
-        <Badge className="capitalize px-3 py-1">
-          {quotation.status.replaceAll('_', ' ')}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge className="capitalize px-3 py-1">
+            {quotation.status.replaceAll('_', ' ')}
+          </Badge>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => downloadQuotationPdf(quotation.id)}
+          >
+            <FileDown className="mr-1.5 h-4 w-4" />
+            Download PDF
+          </Button>
+        </div>
       </div>
 
       {/* ================= BODY ================= */}

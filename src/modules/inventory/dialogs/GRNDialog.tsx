@@ -131,7 +131,7 @@ export default function GRNDialog({
 
   const { data: supplierData } = useSuppliers({
     page_size: 100,
-    page: 0,
+    page: 1,
   });
 
   const suppliers =

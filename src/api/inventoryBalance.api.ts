@@ -22,11 +22,11 @@ export const getInventoryBalances = async (
   params: InventoryBalanceQuery
 ): Promise<InventoryBalanceListData> => {
   const res = await api.get<APIResponse<InventoryBalanceListData>>(
-    "/inventory/balances/",
-    params // ✅ PASS PARAMS DIRECTLY
+    "/inventory/balances",
+    params
   );
 
-  return res.data; // backend already wraps data
+  return res.data;
 };
 
 export const getLowStockBalances = async (): Promise<InventoryBalance[]> => {

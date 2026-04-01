@@ -13,7 +13,17 @@ export type AppError = {
 /* =========================
    TOKEN STATE
 ========================= */
-let accessToken: string | null = null;
+// Initialize from localStorage immediately so the token is available
+// before AuthProvider's useEffect bootstrap has a chance to run.
+// React Query fires requests during the first render; if accessToken is null
+// at that point every request gets a 422 "authorization header missing".
+let accessToken: string | null = (() => {
+  try {
+    return localStorage.getItem("access_token");
+  } catch {
+    return null;
+  }
+})();
 
 let refreshInProgress = false;
 let refreshQueue: (() => void)[] = [];
