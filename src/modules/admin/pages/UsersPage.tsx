@@ -7,8 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { TablePagination } from '@/components/TablePagination';
-import { useToast } from '@/components/ui/use-toast';
-
 import UserDialog from '../dialogs/UserDialog';
 import UsersTable from '../tables/UsersTable';
 
@@ -26,13 +24,15 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 import { UserListItem, UserDetail } from '@/types/users';
 import { getUserById } from '@/api/user.api';
 import { useAuth } from '@/providers/AuthProvider';
+import { useRoleAccess } from '@/hooks/useRoleAccess';
+import { toast } from 'sonner';
 
 const DEFAULT_PAGE_SIZE = 10;
 
 export default function UsersPage() {
-  const { toast } = useToast();
   const { session } = useAuth();
   const currentUserId = session?.id;
+  const perms = useRoleAccess();
 
   const confirm = useConfirm();
 
@@ -102,11 +102,7 @@ export default function UsersPage() {
       setDialogMode('edit');
       setDialogOpen(true);
     } catch {
-      toast({
-        title: 'Error',
-        description: 'Failed to load user details',
-        variant: 'destructive',
-      });
+      toast.error('Failed to load user details');
     } finally {
       setLoadingDetail(false);
     }
@@ -114,34 +110,22 @@ export default function UsersPage() {
 
   const handleDeactivate = async (user: UserListItem) => {
     const ok = await confirm.confirm({
-      title: 'Deactivate user',
-      description: `Deactivate ${user.username}?`,
+      title: 'Deactivate User',
+      description: `Deactivate "${user.username}"? They will lose access immediately.`,
     });
-
     if (!ok) return;
-
-    await deactivateUser.mutateAsync({
-      id: user.id,
-      payload: { version: user.version },
-    });
-
-    toast({ title: 'User deactivated successfully' });
+    // Mutation fires toast on success/error
+    await deactivateUser.mutateAsync({ id: user.id, payload: { version: user.version } });
   };
 
   const handleActivate = async (user: UserListItem) => {
     const ok = await confirm.confirm({
-      title: 'Activate user',
-      description: `Activate ${user.username}?`,
+      title: 'Activate User',
+      description: `Re-activate "${user.username}"?`,
+      variant: 'default',
     });
-
     if (!ok) return;
-
-    await activateUser.mutateAsync({
-      id: user.id,
-      payload: { version: user.version },
-    });
-
-    toast({ title: 'User activated successfully' });
+    await activateUser.mutateAsync({ id: user.id, payload: { version: user.version } });
   };
 
   /* =========================
@@ -187,6 +171,7 @@ export default function UsersPage() {
             <option value="admin">Admin</option>
             <option value="sales">Sales</option>
             <option value="inventory">Inventory</option>
+            <option value="cashier">Cashier</option>
           </select>
 
           <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
@@ -202,16 +187,18 @@ export default function UsersPage() {
             Include inactive users
           </label>
 
-          <Button
-            onClick={() => {
-              setSelectedUser(null);
-              setDialogMode('create');
-              setDialogOpen(true);
-            }}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Add User
-          </Button>
+          {perms.canManageUsers && (
+            <Button
+              onClick={() => {
+                setSelectedUser(null);
+                setDialogMode('create');
+                setDialogOpen(true);
+              }}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add User
+            </Button>
+          )}
         </div>
       </div>
 

@@ -5,6 +5,7 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,10 +17,6 @@ import { GRNView } from "@/types/grn";
 import { useCreateGRN, useUpdateGRN } from "@/mutations/grn.mutations";
 import { useProducts } from "@/queries/product.queries";
 import { useSuppliers } from "@/queries/supplier.queries";
-
-// 🔴 Global error handling
-import { AppError } from "@/errors/AppError";
-import { useGlobalError } from "@/errors/useGlobalError";
 import { Paperclip, Loader2 } from "lucide-react";
 
 const BASE_URL = import.meta.env.VITE_API_URL as string;
@@ -121,11 +118,6 @@ export default function GRNDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, isView, grn?.id]);
 
-  /* =========================
-     GLOBAL ERROR HANDLER
-  ========================= */
-  const handleError = useGlobalError();
-
   const createGRN = useCreateGRN();
   const updateGRN = useUpdateGRN();
 
@@ -201,25 +193,17 @@ export default function GRNDialog({
      SUBMIT
   ========================= */
   const submit = async () => {
-    try {
-      if (isCreate) {
-        await createGRN.mutateAsync(buildPayload());
-      }
-
-      if (isEdit && grn) {
-        await updateGRN.mutateAsync({
-          id: grn.id,
-          payload: {
-            ...buildPayload(),
-            version: grn.version,
-          },
-        });
-      }
-
-      onOpenChange(false);
-    } catch (err) {
-      handleError(AppError.fromAxiosError(err));
+    // Mutations fire toasts on success/error — just await and close
+    if (isCreate) {
+      await createGRN.mutateAsync(buildPayload());
     }
+    if (isEdit && grn) {
+      await updateGRN.mutateAsync({
+        id: grn.id,
+        payload: { ...buildPayload(), version: grn.version },
+      });
+    }
+    onOpenChange(false);
   };
 
   /* =========================
@@ -241,16 +225,16 @@ export default function GRNDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl">
         <DialogHeader>
-          {isCreate && "Create GRN"}
-          {isEdit && "Edit GRN"}
-          {isView && (
-            <div className="flex items-center gap-2">
-              {grn?.code}
-              <Badge className="capitalize">
-                {grn?.status}
-              </Badge>
-            </div>
-          )}
+          <DialogTitle>
+            {isCreate && 'Create Goods Received Note'}
+            {isEdit && 'Edit GRN'}
+            {isView && (
+              <span className="flex items-center gap-2">
+                {grn?.code}
+                <Badge className="capitalize">{grn?.status}</Badge>
+              </span>
+            )}
+          </DialogTitle>
         </DialogHeader>
 
         {/* =========================

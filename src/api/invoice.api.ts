@@ -75,8 +75,8 @@ export const addPayment = async (id: number, payload: PaymentCreatePayload): Pro
   return res.data;
 };
 
-export const fulfillInvoice = async (id: number): Promise<InvoiceOut> => {
-  const res = await api.post<APIResponse<InvoiceOut>>(`/invoices/${id}/fulfill`);
+export const fulfillInvoice = async (id: number, version: number): Promise<InvoiceOut> => {
+  const res = await api.post<APIResponse<InvoiceOut>>(`/invoices/${id}/fulfill`, { version });
   return res.data;
 };
 

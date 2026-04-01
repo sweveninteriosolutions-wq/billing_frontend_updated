@@ -180,7 +180,6 @@ export default function QuotationCreateForm({
         notes,
         items: items.map(i => ({
           product_id: i.product_id,
-          hsn_code: i.hsn_code,
           quantity: i.quantity,
         })),
       });

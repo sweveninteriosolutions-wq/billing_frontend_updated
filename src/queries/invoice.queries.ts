@@ -13,6 +13,8 @@ export const useInvoices = (params: InvoiceListQuery) =>
   useQuery<InvoiceListResponse>({
     queryKey: INVOICE_KEYS.list(params),
     queryFn: () => getInvoices(params),
+    staleTime: 30_000,
+    placeholderData: (prev) => prev,
   });
 
 export const useInvoice = (id: number, enabled = true) =>
@@ -20,4 +22,5 @@ export const useInvoice = (id: number, enabled = true) =>
     queryKey: INVOICE_KEYS.detail(id),
     queryFn: () => getInvoice(id),
     enabled,
+    staleTime: 60_000,
   });

@@ -21,11 +21,13 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { useConfirm } from '@/hooks/useConfirm';
 
 import { Customer } from '@/types/customer';
+import { useRoleAccess } from '@/hooks/useRoleAccess';
 
 const DEFAULT_PAGE_SIZE = 10;
 
 export default function CustomersPage() {
   const { toast } = useToast();
+  const perms = useRoleAccess();
 
   /* =========================
      FILTERS
@@ -139,16 +141,18 @@ export default function CustomersPage() {
             Include inactive customers
           </label>
 
-          <Button
-            onClick={() => {
-              setSelectedCustomer(null);
-              setDialogMode('create');
-              setDialogOpen(true);
-            }}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Add Customer
-          </Button>
+          {perms.canManageCustomers && (
+            <Button
+              onClick={() => {
+                setSelectedCustomer(null);
+                setDialogMode('create');
+                setDialogOpen(true);
+              }}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Customer
+            </Button>
+          )}
         </div>
       </div>
 

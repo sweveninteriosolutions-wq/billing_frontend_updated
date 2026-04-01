@@ -24,6 +24,7 @@ import { Supplier } from '@/types/supplier';
 import { useToast } from '@/components/ui/use-toast';
 import { useGlobalError } from '@/errors/useGlobalError';
 import { AppError } from '@/errors/AppError';
+import { useRoleAccess } from '@/hooks/useRoleAccess';
 
 const DEFAULT_PAGE_SIZE = 10;
 
@@ -31,6 +32,7 @@ export default function SuppliersPage() {
   const { toast } = useToast();
   const handleGlobalError = useGlobalError();
   const confirm = useConfirm();
+  const perms = useRoleAccess();
 
   /* =========================
      FILTERS
@@ -146,16 +148,18 @@ export default function SuppliersPage() {
             Include deleted suppliers
           </label>
 
-          <Button
-            onClick={() => {
-              setSelectedSupplier(null);
-              setDialogMode('create');
-              setDialogOpen(true);
-            }}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Add Supplier
-          </Button>
+          {perms.canManageSuppliers && (
+            <Button
+              onClick={() => {
+                setSelectedSupplier(null);
+                setDialogMode('create');
+                setDialogOpen(true);
+              }}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Supplier
+            </Button>
+          )}
         </div>
       </div>
 

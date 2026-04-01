@@ -1,4 +1,6 @@
+// src/mutations/discount.mutations.ts
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import {
   createDiscount,
   updateDiscount,
@@ -6,6 +8,7 @@ import {
   reactivateDiscount,
 } from '@/api/discount.api';
 import { DISCOUNTS_QUERY_KEY } from '@/queries/discount.queries';
+import { extractErrorMessage } from '@/lib/apiRequest';
 
 export function useCreateDiscount() {
   const qc = useQueryClient();
@@ -13,7 +16,9 @@ export function useCreateDiscount() {
     mutationFn: createDiscount,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: DISCOUNTS_QUERY_KEY });
+      toast.success('Discount created successfully');
     },
+    onError: (err) => toast.error(extractErrorMessage(err)),
   });
 }
 
@@ -24,7 +29,9 @@ export function useUpdateDiscount() {
       updateDiscount(id, payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: DISCOUNTS_QUERY_KEY });
+      toast.success('Discount updated');
     },
+    onError: (err) => toast.error(extractErrorMessage(err)),
   });
 }
 
@@ -34,7 +41,9 @@ export function useDeactivateDiscount() {
     mutationFn: (id: number) => deactivateDiscount(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: DISCOUNTS_QUERY_KEY });
+      toast.success('Discount deactivated');
     },
+    onError: (err) => toast.error(extractErrorMessage(err)),
   });
 }
 
@@ -44,6 +53,8 @@ export function useActivateDiscount() {
     mutationFn: (id: number) => reactivateDiscount(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: DISCOUNTS_QUERY_KEY });
+      toast.success('Discount activated');
     },
+    onError: (err) => toast.error(extractErrorMessage(err)),
   });
 }

@@ -1,3 +1,7 @@
+// src/modules/admin/dialogs/DiscountDialog.tsx
+// Mutations handle success toasts. Removed useToast duplication.
+// Block close during submission. Form resets on open.
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -5,11 +9,12 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Loader2 } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 
 import DiscountForm from '../forms/DiscountForm';
 import {
@@ -17,11 +22,7 @@ import {
   useUpdateDiscount,
 } from '@/mutations/discount.mutations';
 import { Discount, DiscountType } from '@/types/discount';
-import { useGlobalError } from '@/errors/useGlobalError';
 
-/* =========================
-   TYPES
-========================= */
 type DiscountDialogMode = 'create' | 'edit' | 'view';
 
 type Props = {
@@ -42,9 +43,6 @@ type DiscountFormValues = {
   note?: string;
 };
 
-/* =========================
-   CONSTANTS
-========================= */
 const emptyForm: DiscountFormValues = {
   name: '',
   code: '',
@@ -56,33 +54,18 @@ const emptyForm: DiscountFormValues = {
   note: '',
 };
 
-const isExpired = (d: Discount) =>
-  new Date(d.end_date) < new Date();
+const isExpired = (d: Discount) => new Date(d.end_date) < new Date();
 
-/* =========================
-   COMPONENT
-========================= */
-export default function DiscountDialog({
-  open,
-  onOpenChange,
-  mode,
-  discount,
-}: Props) {
-  const { toast } = useToast();
-  const handleGlobalError = useGlobalError();
-
+export default function DiscountDialog({ open, onOpenChange, mode, discount }: Props) {
   const createDiscount = useCreateDiscount();
   const updateDiscount = useUpdateDiscount();
 
   const [form, setForm] = useState<DiscountFormValues>(emptyForm);
-  const [fieldErrors, setFieldErrors] =
-    useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  /* =========================
-     INIT FORM
-  ========================= */
+  // Reset form when dialog opens
   useEffect(() => {
+    if (!open) return;
     if ((mode === 'edit' || mode === 'view') && discount) {
       setForm({
         name: discount.name,
@@ -98,15 +81,13 @@ export default function DiscountDialog({
       setForm(emptyForm);
     }
     setFieldErrors({});
-  }, [mode, discount]);
+  }, [open, mode, discount]);
 
-  const update = (field: string, value: string) => {
+  const updateField = (field: string, value: string) =>
     setForm((p) => ({ ...p, [field]: value }));
-  };
 
-  /* =========================
-     DIRTY CHECK
-  ========================= */
+  const isPending = createDiscount.isPending || updateDiscount.isPending;
+
   const isDirty =
     mode === 'edit' &&
     discount &&
@@ -124,70 +105,51 @@ export default function DiscountDialog({
 
   const expired = mode === 'edit' && discount && isExpired(discount);
 
-  /* =========================
-     SUBMIT
-  ========================= */
+  const handleOpenChange = (v: boolean) => {
+    if (!v && isPending) return;
+    onOpenChange(v);
+  };
+
   const handleSubmit = async () => {
     if (expired) {
-      toast({
-        title: 'Discount expired',
-        description: 'Expired discounts cannot be edited',
-        variant: 'default',
-      });
+      toast.warning('Expired discounts cannot be edited');
       return;
     }
 
-    setIsSubmitting(true);
     setFieldErrors({});
 
-    try {
-      if (mode === 'create') {
-        await createDiscount.mutateAsync({
-          ...form,
-          usage_limit: form.usage_limit
-            ? Number(form.usage_limit)
-            : undefined,
-        });
-        toast({ title: 'Discount created successfully' });
-      }
-
-      if (mode === 'edit' && discount) {
-        await updateDiscount.mutateAsync({
-          id: discount.id,
-          payload: {
-            ...form,
-            usage_limit: form.usage_limit
-              ? Number(form.usage_limit)
-              : undefined,
-            version: discount.version,
-          },
-        });
-        toast({ title: 'Discount updated successfully' });
-      }
-
-      onOpenChange(false);
-    } catch (err: any) {
-      if (err?.details) {
-        setFieldErrors(err.details);
-      } else {
-        handleGlobalError(err);
-      }
-    } finally {
-      setIsSubmitting(false);
+    if (mode === 'create') {
+      await createDiscount.mutateAsync({
+        ...form,
+        usage_limit: form.usage_limit ? Number(form.usage_limit) : undefined,
+      });
     }
+
+    if (mode === 'edit' && discount) {
+      await updateDiscount.mutateAsync({
+        id: discount.id,
+        payload: {
+          name: form.name,
+          discount_type: form.discount_type,
+          discount_value: form.discount_value,
+          start_date: form.start_date,
+          end_date: form.end_date,
+          usage_limit: form.usage_limit ? Number(form.usage_limit) : undefined,
+          note: form.note || undefined,
+        },
+      });
+    }
+
+    onOpenChange(false);
   };
 
-  /* =========================
-     VIEW MODE
-  ========================= */
+  /* VIEW MODE */
   if (mode === 'view' && discount) {
     return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <h2 className="text-xl font-semibold">
-              Discount Details
-            </h2>
+            <DialogTitle>Discount Details</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-3 text-sm">
@@ -201,13 +163,9 @@ export default function DiscountDialog({
             />
             <Detail
               label="Usage"
-              value={`${discount.used_count} / ${
-                discount.usage_limit ?? '∞'
-              }`}
+              value={`${discount.used_count} / ${discount.usage_limit ?? '∞'}`}
             />
-
             <Separator />
-
             <Detail
               label="Created At"
               value={new Date(discount.created_at).toLocaleString()}
@@ -234,59 +192,48 @@ export default function DiscountDialog({
     );
   }
 
-  /* =========================
-     CREATE / EDIT
-  ========================= */
+  /* CREATE / EDIT MODE */
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] flex flex-col">
         <DialogHeader>
-          <h2 className="text-xl font-semibold">
+          <DialogTitle>
             {mode === 'create' ? 'Create Discount' : 'Edit Discount'}
-          </h2>
+          </DialogTitle>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto py-2">
           <DiscountForm
             values={form}
-            onChange={update}
+            onChange={updateField}
             mode={mode}
             errors={fieldErrors}
           />
         </div>
 
-        <Button
-          className="mt-4"
-          onClick={handleSubmit}
-          disabled={
-            isSubmitting ||
-            (mode === 'edit' && !isDirty) ||
-            expired
-          }
-        >
-          {isSubmitting && (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          )}
-          {mode === 'create'
-            ? 'Create Discount'
-            : isSubmitting
-            ? 'Updating...'
-            : 'Update Discount'}
-        </Button>
-
         {expired && (
-          <p className="text-xs text-muted-foreground mt-2 text-center">
+          <p className="text-xs text-muted-foreground text-center">
             This discount has expired and cannot be edited
           </p>
         )}
+
+        <Button
+          className="mt-4"
+          onClick={handleSubmit}
+          disabled={isPending || (mode === 'edit' && !isDirty) || !!expired}
+        >
+          {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isPending
+            ? 'Saving…'
+            : mode === 'create'
+            ? 'Create Discount'
+            : 'Update Discount'}
+        </Button>
       </DialogContent>
     </Dialog>
   );
 }
 
-/* =========================
-   HELPER
-========================= */
 function Detail({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-4">

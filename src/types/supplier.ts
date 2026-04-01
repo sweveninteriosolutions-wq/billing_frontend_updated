@@ -29,6 +29,7 @@ export type SupplierCreateInput = {
   contact_person?: string;
   phone?: string;
   email?: string;
+  address?: string;
 };
 
 export type SupplierUpdateInput = {

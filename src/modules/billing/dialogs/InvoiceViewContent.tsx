@@ -45,6 +45,7 @@ export default function InvoiceViewContent({ invoice, isOpen }: Props) {
   if (!data) return null;
 
   const isInterState = Number(data.igst_rate ?? 0) > 0;
+  const snap = data.customer_snapshot as Record<string, string> | null | undefined;
 
   return (
     <div className="space-y-5 overflow-y-auto max-h-[70vh] pr-1">
@@ -58,6 +59,12 @@ export default function InvoiceViewContent({ invoice, isOpen }: Props) {
               day: '2-digit', month: 'short', year: 'numeric',
             })}
           </p>
+          {snap?.name && (
+            <p className="text-sm font-medium mt-1">{snap.name}</p>
+          )}
+          {snap?.email && (
+            <p className="text-xs text-muted-foreground">{snap.email}</p>
+          )}
         </div>
         <div className="flex flex-col items-end gap-2">
           <Badge className={`capitalize ${STATUS_COLOR[data.status]}`} variant="outline">
@@ -89,8 +96,9 @@ export default function InvoiceViewContent({ invoice, isOpen }: Props) {
               key={item.id}
               className="grid grid-cols-12 gap-2 px-3 py-2.5 border-t items-center"
             >
-              <div className="col-span-5 text-muted-foreground">
-                Product #{item.product_id}
+              <div className="col-span-5 font-medium">
+                {/* product_name not in InvoiceItemOut — show product_id as reference */}
+                <span className="text-xs text-muted-foreground font-mono">#{item.product_id}</span>
               </div>
               <div className="col-span-2 text-right">{fmt(item.unit_price)}</div>
               <div className="col-span-2 text-center">{item.quantity}</div>

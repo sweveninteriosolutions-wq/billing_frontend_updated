@@ -23,12 +23,14 @@ import { usePagination } from '@/hooks/usePagination';
 import { GRNView } from '@/types/grn';
 import { AppError } from '@/errors/AppError';
 import { useGlobalError } from '@/errors/useGlobalError';
+import { useRoleAccess } from '@/hooks/useRoleAccess';
 
 const DEFAULT_PAGE_SIZE = 20;
 
 export default function GRNPage() {
   const handleError = useGlobalError();
   const confirm = useConfirm();
+  const perms = useRoleAccess();
 
   /* =========================
      PAGINATION
@@ -132,10 +134,12 @@ export default function GRNPage() {
           </p>
         </div>
 
-        <Button onClick={handleCreate}>
-          <Plus className="mr-2 h-4 w-4" />
-          New GRN
-        </Button>
+        {perms.canManageGRN && (
+          <Button onClick={handleCreate}>
+            <Plus className="mr-2 h-4 w-4" />
+            New GRN
+          </Button>
+        )}
       </div>
 
       {/* STATS */}

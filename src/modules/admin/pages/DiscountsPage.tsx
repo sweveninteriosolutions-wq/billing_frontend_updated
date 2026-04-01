@@ -23,11 +23,13 @@ import { useConfirm } from '@/hooks/useConfirm';
 import ConfirmDialog from '@/components/ConfirmDialog';
 
 import { Discount, DiscountType } from '@/types/discount';
+import { useRoleAccess } from '@/hooks/useRoleAccess';
 
 const DEFAULT_PAGE_SIZE = 20;
 
 export default function DiscountsPage() {
   const confirm = useConfirm();
+  const perms = useRoleAccess();
 
   /* =========================
      FILTERS
@@ -159,16 +161,18 @@ export default function DiscountsPage() {
             Include inactive discounts
           </label>
 
-          <Button
-            onClick={() => {
-              setSelectedDiscount(null);
-              setDialogMode('create');
-              setDialogOpen(true);
-            }}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Add Discount
-          </Button>
+          {perms.canManageDiscounts && (
+            <Button
+              onClick={() => {
+                setSelectedDiscount(null);
+                setDialogMode('create');
+                setDialogOpen(true);
+              }}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Discount
+            </Button>
+          )}
         </div>
       </div>
 

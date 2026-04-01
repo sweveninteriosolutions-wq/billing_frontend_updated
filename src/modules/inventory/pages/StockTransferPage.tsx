@@ -18,11 +18,13 @@ import {
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useConfirm } from '@/hooks/useConfirm';
 import { usePagination } from '@/hooks/usePagination';
+import { useRoleAccess } from '@/hooks/useRoleAccess';
 
 const DEFAULT_PAGE_SIZE = 20;
 
 export default function StockTransferPage() {
   const confirm = useConfirm();
+  const perms = useRoleAccess();
 
   /* =========================
      PAGINATION
@@ -88,10 +90,12 @@ export default function StockTransferPage() {
           </p>
         </div>
 
-        <Button onClick={() => setDialogOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          New Transfer
-        </Button>
+        {perms.canManageStockTransfer && (
+          <Button onClick={() => setDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            New Transfer
+          </Button>
+        )}
       </div>
 
       {/* STATS */}

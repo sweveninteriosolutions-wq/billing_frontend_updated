@@ -43,6 +43,8 @@ export function useCustomers(params: CustomerListParams) {
       const res = await customerApi.list(params);
       return res.data;
     },
+    staleTime: 30_000, // 30s — list data refreshes quickly enough
+    placeholderData: (prev) => prev,
   });
 }
 
@@ -54,5 +56,6 @@ export function useCustomer(id: number, enabled = true) {
       return res.data;
     },
     enabled,
+    staleTime: 60_000,
   });
 }

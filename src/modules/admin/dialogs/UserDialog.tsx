@@ -1,15 +1,22 @@
+// src/modules/admin/dialogs/UserDialog.tsx
+// Mutations handle toasts. Manual state management removed.
+// Block close during submission.
+
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
+import { useEffect, useRef, useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
+import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import UserForm from '../forms/UserForm';
 import { UserDetail, UserRole } from '@/types/users';
-import {
-  useCreateUser,
-  useUpdateUser,
-} from '@/mutations/user.mutations';
+import { useCreateUser, useUpdateUser } from '@/mutations/user.mutations';
 
 type Props = {
   open: boolean;
@@ -18,92 +25,77 @@ type Props = {
   user: UserDetail | null;
 };
 
-export default function UserDialog({
-  open,
-  onOpenChange,
-  mode,
-  user,
-}: Props) {
-  const { toast } = useToast();
+export default function UserDialog({ open, onOpenChange, mode, user }: Props) {
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
+  const emailRef = useRef<HTMLInputElement>(null);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<UserRole>('sales');
-  const [submitting, setSubmitting] = useState(false);
 
+  // Reset form when dialog opens/mode changes
   useEffect(() => {
-    if (mode === 'edit' && user) {
-      setEmail(user.username);
-      setRole(user.role);
-      setPassword('');
-    } else {
-      setEmail('');
-      setPassword('');
-      setRole('sales');
+    if (open) {
+      if (mode === 'edit' && user) {
+        setEmail(user.username);
+        setRole(user.role);
+        setPassword('');
+      } else {
+        setEmail('');
+        setPassword('');
+        setRole('sales');
+      }
+      // Autofocus first input
+      setTimeout(() => emailRef.current?.focus(), 50);
     }
-  }, [mode, user]);
+  }, [open, mode, user]);
+
+  const isPending = createUser.isPending || updateUser.isPending;
+
+  const handleOpenChange = (v: boolean) => {
+    if (!v && isPending) return;
+    onOpenChange(v);
+  };
 
   const handleSubmit = async () => {
-    // 🔒 Basic validation (don’t be lazy)
     if (!email.trim()) {
-      toast({ title: 'Email is required', variant: 'destructive' });
+      toast.error('Email is required');
       return;
     }
-
     if (mode === 'create' && !password.trim()) {
-      toast({ title: 'Password is required', variant: 'destructive' });
+      toast.error('Password is required for new users');
       return;
     }
 
-    try {
-      setSubmitting(true);
-
-      if (mode === 'create') {
-        await createUser.mutateAsync({
+    if (mode === 'create') {
+      await createUser.mutateAsync({ email, password, role });
+    } else if (user) {
+      await updateUser.mutateAsync({
+        id: user.id,
+        payload: {
           email,
-          password,
+          password: password || undefined,
           role,
-        });
-
-        toast({ title: 'User created successfully' });
-      } else if (user) {
-        await updateUser.mutateAsync({
-          id: user.id,
-          payload: {
-            email,
-            password: password || undefined,
-            role,
-            version: user.version,
-          },
-        });
-
-        toast({ title: 'User updated successfully' });
-      }
-
-      onOpenChange(false);
-    } catch {
-      toast({
-        title: 'Error',
-        description: 'Operation failed',
-        variant: 'destructive',
+          version: user.version,
+        },
       });
-    } finally {
-      setSubmitting(false);
     }
+
+    onOpenChange(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <h2 className="text-xl font-semibold">
+          <DialogTitle>
             {mode === 'create' ? 'Create User' : 'Edit User'}
-          </h2>
+          </DialogTitle>
         </DialogHeader>
 
         <UserForm
+          ref={emailRef}
           email={email}
           password={password}
           role={role}
@@ -116,10 +108,11 @@ export default function UserDialog({
         <Button
           className="w-full mt-4"
           onClick={handleSubmit}
-          disabled={submitting}
+          disabled={isPending}
         >
-          {submitting
-            ? 'Saving...'
+          {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isPending
+            ? 'Saving…'
             : mode === 'create'
             ? 'Create User'
             : 'Update User'}

@@ -1,5 +1,6 @@
 // src/mutations/purchaseOrder.mutations.ts
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import {
   createPurchaseOrder,
   submitPurchaseOrder,
@@ -7,12 +8,17 @@ import {
   cancelPurchaseOrder,
 } from '@/api/purchaseOrder.api';
 import { PO_KEYS } from '@/queries/purchaseOrder.queries';
+import { extractErrorMessage } from '@/lib/apiRequest';
 
 export const useCreatePurchaseOrder = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: createPurchaseOrder,
-    onSuccess: () => qc.invalidateQueries({ queryKey: PO_KEYS.all }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: PO_KEYS.all });
+      toast.success('Purchase order created');
+    },
+    onError: (err) => toast.error(extractErrorMessage(err)),
   });
 };
 
@@ -23,7 +29,9 @@ export const useSubmitPurchaseOrder = () => {
     onSuccess: (_: any, id: number) => {
       qc.invalidateQueries({ queryKey: PO_KEYS.all });
       qc.invalidateQueries({ queryKey: PO_KEYS.detail(id) });
+      toast.success('Purchase order submitted');
     },
+    onError: (err) => toast.error(extractErrorMessage(err)),
   });
 };
 
@@ -34,7 +42,9 @@ export const useApprovePurchaseOrder = () => {
     onSuccess: (_: any, id: number) => {
       qc.invalidateQueries({ queryKey: PO_KEYS.all });
       qc.invalidateQueries({ queryKey: PO_KEYS.detail(id) });
+      toast.success('Purchase order approved');
     },
+    onError: (err) => toast.error(extractErrorMessage(err)),
   });
 };
 
@@ -45,6 +55,8 @@ export const useCancelPurchaseOrder = () => {
     onSuccess: (_: any, id: number) => {
       qc.invalidateQueries({ queryKey: PO_KEYS.all });
       qc.invalidateQueries({ queryKey: PO_KEYS.detail(id) });
+      toast.success('Purchase order cancelled');
     },
+    onError: (err) => toast.error(extractErrorMessage(err)),
   });
 };

@@ -42,7 +42,7 @@ export interface DiscountUpdatePayload {
   usage_limit?: number;
   note?: string;
   is_active?: boolean;
-  version: number;
+  // NOTE: backend DiscountUpdate schema has no version field
 }
 
 export interface DiscountListFilters {

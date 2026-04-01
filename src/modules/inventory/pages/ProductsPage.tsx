@@ -1,3 +1,7 @@
+// src/modules/inventory/pages/ProductsPage.tsx
+// Phase 7 + 8: Role-gated buttons, ErrorState for query failures,
+// EmptyState with action CTA, search resets page, isFetching indicator.
+
 'use client';
 
 import { useState } from 'react';
@@ -7,7 +11,6 @@ import {
   CardHeader,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -16,13 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Plus,
-  Edit,
-  Trash2,
-  Eye,
-  Box,
-} from 'lucide-react';
+import { Plus, Box } from 'lucide-react';
 
 import ProductDialog from '../dialogs/ProductDialog';
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -36,70 +33,41 @@ import {
 } from '@/mutations/product.mutations';
 
 import { Product } from '@/types/product';
-import { useGlobalError } from '@/errors/useGlobalError';
-import { AppError } from '@/errors/AppError';
-
 import { usePagination } from '@/hooks/usePagination';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useConfirm } from '@/hooks/useConfirm';
+import { useRoleAccess } from '@/hooks/useRoleAccess';
 
 const DEFAULT_PAGE_SIZE = 10;
 
-/* =========================
-   FILTER FACTORY (UNCHANGED)
-========================= */
 const createDefaultFilters = () => ({
   search: '',
   category: '',
   status: 'all' as 'all' | 'active' | 'inactive',
   minPrice: '',
   maxPrice: '',
-  sortBy: 'created_at' as
-    | 'created_at'
-    | 'name'
-    | 'price'
-    | 'sku',
+  sortBy: 'created_at' as 'created_at' | 'name' | 'price' | 'sku',
   order: 'desc' as 'asc' | 'desc',
 });
 
 export default function ProductsPage() {
-  const handleError = useGlobalError();
+  const perms = useRoleAccess();
   const confirm = useConfirm();
 
-  /* =========================
-     FILTER STATE
-  ========================= */
   const [draft, setDraft] = useState(createDefaultFilters());
   const [filters, setFilters] = useState(createDefaultFilters());
+  const debouncedSearch = useDebounce(filters.search, 300);
 
-  const debouncedSearch = useDebounce(filters.search, 400);
-
-  /* =========================
-     PAGINATION (STANDARDIZED)
-  ========================= */
-  const {
-    page,
-    pageSize,
-    setPage,
-    setPageSize,
-    reset,
-  } = usePagination({
+  const { page, pageSize, setPage, setPageSize, reset } = usePagination({
     initialPage: 1,
     initialPageSize: DEFAULT_PAGE_SIZE,
   });
 
-  /* =========================
-     QUERY
-  ========================= */
-  const { data, isLoading, isFetching } = useProducts({
+  const { data, isLoading, isFetching, isError, refetch } = useProducts({
     search: debouncedSearch || undefined,
     category: filters.category || undefined,
-    min_price: filters.minPrice
-      ? Number(filters.minPrice)
-      : undefined,
-    max_price: filters.maxPrice
-      ? Number(filters.maxPrice)
-      : undefined,
+    min_price: filters.minPrice ? Number(filters.minPrice) : undefined,
+    max_price: filters.maxPrice ? Number(filters.maxPrice) : undefined,
     is_deleted:
       filters.status === 'all'
         ? undefined
@@ -113,24 +81,13 @@ export default function ProductsPage() {
   const products = data?.items ?? [];
   const total = data?.total ?? 0;
 
-  /* =========================
-     MUTATIONS
-  ========================= */
   const deactivate = useDeactivateProduct();
   const activate = useActivateProduct();
 
-  /* =========================
-     DIALOG
-  ========================= */
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogMode, setDialogMode] =
-    useState<'create' | 'edit' | 'view'>('create');
-  const [selected, setSelected] =
-    useState<Product | null>(null);
+  const [dialogMode, setDialogMode] = useState<'create' | 'edit' | 'view'>('create');
+  const [selected, setSelected] = useState<Product | null>(null);
 
-  /* =========================
-     FILTER HANDLERS
-  ========================= */
   const applyFilters = () => {
     setFilters({ ...draft });
     reset();
@@ -143,94 +100,66 @@ export default function ProductsPage() {
     reset();
   };
 
-  /* =========================
-     ACTION HANDLERS
-  ========================= */
   const handleDeactivate = async (product: Product) => {
     const ok = await confirm.confirm({
-      title: 'Confirm Deactivation',
-      description: `Deactivate ${product.name}?`,
+      title: 'Deactivate Product',
+      description: `Deactivate "${product.name}"? It will be hidden from sales.`,
     });
-
     if (!ok) return;
-
-    try {
-      await deactivate.mutateAsync({
-        id: product.id,
-        version: product.version,
-      });
-    } catch (e) {
-      handleError(AppError.fromAxiosError(e));
-    }
+    await deactivate.mutateAsync({ id: product.id, version: product.version });
   };
 
-  /* =========================
-     RENDER
-  ========================= */
   return (
     <div className="space-y-6">
       {/* HEADER */}
       <div className="flex justify-between items-start">
         <div>
           <h1 className="text-3xl font-bold">Products</h1>
-          <p className="text-muted-foreground">
-            Manage product catalog
-          </p>
+          <p className="text-muted-foreground">Manage product catalog</p>
         </div>
 
-        <Button
-          onClick={() => {
-            setSelected(null);
-            setDialogMode('create');
-            setDialogOpen(true);
-          }}
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Add Product
-        </Button>
+        {/* Phase 8 — role-gated */}
+        {perms.canManageProducts && (
+          <Button
+            onClick={() => {
+              setSelected(null);
+              setDialogMode('create');
+              setDialogOpen(true);
+            }}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Add Product
+          </Button>
+        )}
       </div>
 
-      {/* FILTERS (UNCHANGED UI) */}
+      {/* FILTERS */}
       <div className="grid grid-cols-2 md:grid-cols-7 gap-3">
         <Input
           placeholder="Search name / SKU"
           value={draft.search}
-          onChange={e =>
-            setDraft(d => ({ ...d, search: e.target.value }))
-          }
+          onChange={(e) => setDraft((d) => ({ ...d, search: e.target.value }))}
         />
-
         <Input
           placeholder="Category"
           value={draft.category}
-          onChange={e =>
-            setDraft(d => ({ ...d, category: e.target.value }))
-          }
+          onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value }))}
         />
-
         <Input
           type="number"
           placeholder="Min price"
           value={draft.minPrice}
-          onChange={e =>
-            setDraft(d => ({ ...d, minPrice: e.target.value }))
-          }
+          onChange={(e) => setDraft((d) => ({ ...d, minPrice: e.target.value }))}
         />
-
         <Input
           type="number"
           placeholder="Max price"
           value={draft.maxPrice}
-          onChange={e =>
-            setDraft(d => ({ ...d, maxPrice: e.target.value }))
-          }
+          onChange={(e) => setDraft((d) => ({ ...d, maxPrice: e.target.value }))}
         />
-
         <Select
           value={draft.status}
-          onValueChange={v =>
-            setDraft(d => ({ ...d, status: v as any }))
-          }
+          onValueChange={(v) => setDraft((d) => ({ ...d, status: v as any }))}
         >
           <SelectTrigger>
             <SelectValue placeholder="Status" />
@@ -244,13 +173,9 @@ export default function ProductsPage() {
 
         <Select
           value={`${draft.sortBy}:${draft.order}`}
-          onValueChange={v => {
+          onValueChange={(v) => {
             const [s, o] = v.split(':');
-            setDraft(d => ({
-              ...d,
-              sortBy: s as any,
-              order: o as any,
-            }));
+            setDraft((d) => ({ ...d, sortBy: s as any, order: o as any }));
           }}
         >
           <SelectTrigger>
@@ -274,61 +199,72 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      {isFetching && (
-        <p className="text-sm text-muted-foreground">
-          Updating results…
-        </p>
+      {isFetching && !isLoading && (
+        <p className="text-sm text-muted-foreground">Updating results…</p>
       )}
 
       {/* TABLE */}
       <Card>
-          <CardHeader className="border-b">
-            <h3 className="flex items-center gap-2 font-semibold">
-              <Box className="h-5 w-5" />
-              Products
-            </h3>
-          </CardHeader>
-
-  <CardContent className="p-0">
-    <ProductsTable
-      products={products}
-      isLoading={isLoading}
-      isFetching={isFetching}
-      pageSize={pageSize}
-      onView={(p) => {
-        setSelected(p);
-        setDialogMode('view');
-        setDialogOpen(true);
-      }}
-      onEdit={(p) => {
-        setSelected(p);
-        setDialogMode('edit');
-        setDialogOpen(true);
-      }}
-      onDeactivate={handleDeactivate}
-      onActivate={(p) => activate.mutateAsync(p.id)}
-    />
-  </CardContent>
-</Card>
-
+        <CardHeader className="border-b">
+          <h3 className="flex items-center gap-2 font-semibold">
+            <Box className="h-5 w-5" />
+            Products
+          </h3>
+        </CardHeader>
+        <CardContent className="p-0">
+          <ProductsTable
+            products={products}
+            isLoading={isLoading}
+            isFetching={isFetching}
+            isError={isError}
+            onRetry={refetch}
+            pageSize={pageSize}
+            canEdit={perms.canManageProducts}
+            canDelete={perms.canManageProducts && perms.canDelete}
+            emptyAction={
+              perms.canManageProducts
+                ? {
+                    label: 'Add your first product',
+                    onClick: () => {
+                      setSelected(null);
+                      setDialogMode('create');
+                      setDialogOpen(true);
+                    },
+                  }
+                : undefined
+            }
+            onView={(p) => {
+              setSelected(p);
+              setDialogMode('view');
+              setDialogOpen(true);
+            }}
+            onEdit={(p) => {
+              setSelected(p);
+              setDialogMode('edit');
+              setDialogOpen(true);
+            }}
+            onDeactivate={handleDeactivate}
+            onActivate={(p) => activate.mutateAsync(p.id)}
+          />
+        </CardContent>
+      </Card>
 
       {/* PAGINATION */}
-{total >= 0 && (
-          <div className="mt-auto pt-4">
-            <TablePagination
-              page={page}
-              pageSize={pageSize}
-              total={total}
-              isFetching={isFetching}
-              onPageChange={setPage}
-              onPageSizeChange={(size) => {
-                setPageSize(size);
-                reset();
-              }}
-            />
-          </div>
-        )}
-
+      {total >= 0 && (
+        <div className="mt-auto pt-4">
+          <TablePagination
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            isFetching={isFetching}
+            onPageChange={setPage}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              reset();
+            }}
+          />
+        </div>
+      )}
 
       {/* CONFIRM */}
       {confirm.open && (
@@ -340,7 +276,6 @@ export default function ProductsPage() {
         />
       )}
 
-      {/* PRODUCT DIALOG */}
       <ProductDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}

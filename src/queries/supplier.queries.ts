@@ -42,9 +42,10 @@ export function useSuppliers(params: SupplierListParams) {
       const res = await supplierApi.list(params);
       return res.data;
     },
+    staleTime: 30_000,
+    placeholderData: (prev: any) => prev,
   });
 }
-
 
 export function useSupplier(id: number, enabled = true) {
   return useQuery<Supplier>({
@@ -54,5 +55,6 @@ export function useSupplier(id: number, enabled = true) {
       return res.data;
     },
     enabled,
+    staleTime: 60_000,
   });
 }

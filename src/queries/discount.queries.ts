@@ -9,8 +9,9 @@ export function useDiscounts(filters: DiscountListFilters) {
     queryKey: [...DISCOUNTS_QUERY_KEY, filters],
     queryFn: async () => {
       const res = await listDiscounts(filters);
-      return res.data; // { total, items }
+      return res.data;
     },
-    placeholderData: (prev) => prev, // ✅ v5 replacement
+    staleTime: 30_000,
+    placeholderData: (prev) => prev,
   });
 }

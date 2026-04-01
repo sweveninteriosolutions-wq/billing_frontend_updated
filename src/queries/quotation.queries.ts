@@ -21,6 +21,8 @@ export const useQuotations = (params: QuotationListQuery) =>
   useQuery<QuotationListResponse>({
     queryKey: QUOTATION_KEYS.list(params),
     queryFn: () => getQuotations(params),
+    staleTime: 30_000,
+    placeholderData: (prev) => prev,
   });
 
 export const useQuotation = (id: number, enabled = true) =>
@@ -28,5 +30,6 @@ export const useQuotation = (id: number, enabled = true) =>
     queryKey: QUOTATION_KEYS.detail(id),
     queryFn: () => getQuotation(id),
     enabled,
+    staleTime: 60_000,
   });
 

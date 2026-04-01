@@ -18,6 +18,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 
 import { useWarehouses } from '@/queries/warehouse.queries';
+import { getWarehouse } from '@/api/warehouse.api';
 import {
   useCreateWarehouse,
   useUpdateWarehouse,
@@ -74,19 +75,37 @@ export default function WarehousesPage() {
     setDialogOpen(true);
   };
 
-  const openEdit = (wh: WarehouseListItem) => {
-    setForm({
-      code: wh.code,
-      name: wh.name,
-      address: '',
-      city: wh.city ?? '',
-      state: wh.state ?? '',
-      pincode: '',
-      gstin: '',
-      phone: '',
-      is_active: wh.is_active,
-    });
-    setEditTarget({ ...wh } as any);
+  const openEdit = async (wh: WarehouseListItem) => {
+    // Fetch full detail so address, pincode, gstin, phone are pre-populated
+    try {
+      const detail = await getWarehouse(wh.id);
+      setForm({
+        code: detail.code,
+        name: detail.name,
+        address: detail.address ?? '',
+        city: detail.city ?? '',
+        state: detail.state ?? '',
+        pincode: detail.pincode ?? '',
+        gstin: detail.gstin ?? '',
+        phone: detail.phone ?? '',
+        is_active: detail.is_active,
+      });
+      setEditTarget(detail);
+    } catch {
+      // Fallback to list-item data if detail fetch fails
+      setForm({
+        code: wh.code,
+        name: wh.name,
+        address: '',
+        city: wh.city ?? '',
+        state: wh.state ?? '',
+        pincode: '',
+        gstin: '',
+        phone: '',
+        is_active: wh.is_active,
+      });
+      setEditTarget({ ...wh, version: 1 } as any);
+    }
     setDialogMode('edit');
     setDialogOpen(true);
   };

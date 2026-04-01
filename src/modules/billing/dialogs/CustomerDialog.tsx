@@ -1,3 +1,9 @@
+// src/modules/billing/dialogs/CustomerDialog.tsx
+// ─────────────────────────────────────────────
+// Phase 5/7: Mutations handle toasts. No duplicate toast calls.
+// Dialog is blocked from closing during submission.
+// ─────────────────────────────────────────────
+
 import {
   Dialog,
   DialogContent,
@@ -10,9 +16,6 @@ import {
   useUpdateCustomer,
 } from '@/mutations/customer.mutations';
 import { Customer } from '@/types/customer';
-import { useGlobalError } from '@/errors/useGlobalError';
-import { AppError } from '@/errors/AppError';
-import { toast } from 'sonner';
 
 type Props = {
   open: boolean;
@@ -28,44 +31,32 @@ export default function CustomerDialog({
   customer,
 }: Props) {
   const create = useCreateCustomer();
-  const update = useUpdateCustomer(); // ✅ correct
-  const handleGlobalError = useGlobalError(); // 🔥 central error handler
+  const update = useUpdateCustomer();
 
   const handleSubmit = async (values: any) => {
-    try {
-      if (mode === 'create') {
-        await create.mutateAsync(values);
-        toast.success('Customer created successfully');
-        onOpenChange(false);
-        return;
-      }
-
-      if (mode === 'edit' && customer) {
-        await update.mutateAsync({
-          id: customer.id,
-          payload: {
-            ...values,
-            version: customer.version, // 🔒 optimistic lock
-          },
-        });
-
-        toast.success('Customer updated successfully');
-        onOpenChange(false);
-        return;
-      }
-    } catch (err: any) {
-      // 🚨 ONE place for error handling
-      handleGlobalError(
-        AppError.fromAxiosError(err)
-      );
+    if (mode === 'create') {
+      await create.mutateAsync(values);
     }
+
+    if (mode === 'edit' && customer) {
+      await update.mutateAsync({
+        id: customer.id,
+        payload: { ...values, version: customer.version },
+      });
+    }
+
+    onOpenChange(false);
   };
 
-  const isSubmitting =
-    create.isPending || update.isPending;
+  const isSubmitting = create.isPending || update.isPending;
+
+  const handleOpenChange = (v: boolean) => {
+    if (!v && isSubmitting) return;
+    onOpenChange(v);
+  };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>
@@ -81,11 +72,7 @@ export default function CustomerDialog({
           defaultValues={customer ?? undefined}
           mode={mode}
           loading={isSubmitting}
-          onSubmit={
-            mode === 'view'
-              ? undefined
-              : handleSubmit
-          }
+          onSubmit={mode === 'view' ? undefined : handleSubmit}
         />
       </DialogContent>
     </Dialog>

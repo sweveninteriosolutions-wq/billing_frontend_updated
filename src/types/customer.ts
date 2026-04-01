@@ -39,7 +39,6 @@ export type CustomerCreateInput = {
   name: string;
   email: string;
   phone?: string;
-  gstin?: string | null;
   address?: {
     street?: string;
     city?: string;
@@ -54,6 +53,7 @@ export type CustomerUpdateInput = {
   name?: string;
   email?: string;
   phone?: string;
+  gstin?: string | null;
   address?: Record<string, string>;
   is_active?: boolean;
   version: number;

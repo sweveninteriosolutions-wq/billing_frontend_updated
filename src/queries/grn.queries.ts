@@ -15,6 +15,8 @@ export const useGRNs = (params: GRNListQuery) => {
   return useQuery<GRNListResponse>({
     queryKey: GRN_KEYS.list(params),
     queryFn: () => getGRNs(params),
+    staleTime: 30_000,
+    placeholderData: (prev) => prev,
   });
 };
 
@@ -23,5 +25,6 @@ export const useGRN = (id: number, enabled = true) => {
     queryKey: GRN_KEYS.detail(id),
     queryFn: () => getGRN(id),
     enabled,
+    staleTime: 60_000,
   });
 };

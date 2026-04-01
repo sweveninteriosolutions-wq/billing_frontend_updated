@@ -21,12 +21,14 @@ import { StatCard } from '@/components/StatCard';
 import { QuotationView } from '@/types/quotation';
 import { AppError } from '@/errors/AppError';
 import { useGlobalError } from '@/errors/useGlobalError';
+import { useRoleAccess } from '@/hooks/useRoleAccess';
 
 const DEFAULT_PAGE_SIZE = 20;
 
 export default function QuotationPage() {
   const handleError = useGlobalError();
   const confirm = useConfirm();
+  const perms = useRoleAccess();
 
   const { page, pageSize, setPage, setPageSize, reset } = usePagination({
     initialPage: 1,
@@ -116,10 +118,12 @@ export default function QuotationPage() {
           </div>
         </div>
 
-        <Button onClick={handleCreate}>
-          <Plus className="mr-2 h-4 w-4" />
-          New Quotation
-        </Button>
+        {perms.canManageQuotations && (
+          <Button onClick={handleCreate}>
+            <Plus className="mr-2 h-4 w-4" />
+            New Quotation
+          </Button>
+        )}
       </div>
 
       {/* STATS */}

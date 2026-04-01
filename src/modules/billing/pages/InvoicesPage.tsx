@@ -11,6 +11,7 @@ import InvoiceViewDialog from '../dialogs/InvoiceViewDialog';
 import PaymentCreateDialog from '../dialogs/PaymentCreateDialog';
 
 import { useInvoices } from '@/queries/invoice.queries';
+import { getInvoice } from '@/api/invoice.api';
 import {
   useVerifyInvoice,
   useCancelInvoice,
@@ -27,12 +28,14 @@ import { AppError } from '@/errors/AppError';
 import { useGlobalError } from '@/errors/useGlobalError';
 import { InvoiceListItem } from '@/types/invoice';
 import { downloadInvoicePdf } from '@/api/invoice.api';
+import { useRoleAccess } from '@/hooks/useRoleAccess';
 
 const DEFAULT_PAGE_SIZE = 20;
 
 export default function InvoicesPage() {
   const handleError = useGlobalError();
   const confirm = useConfirm();
+  const perms = useRoleAccess();
 
   /* =========================
      PAGINATION
@@ -114,7 +117,9 @@ export default function InvoicesPage() {
     if (!ok) return;
     setProcessingId(inv.id);
     try {
-      await fulfill.mutateAsync(inv.id);
+      // Fetch full invoice to get current version for optimistic lock
+      const detail = await getInvoice(inv.id);
+      await fulfill.mutateAsync({ id: inv.id, version: detail.version });
     } catch (err) {
       handleError(AppError.fromAxiosError(err));
     } finally {
@@ -167,10 +172,12 @@ export default function InvoicesPage() {
             Create, manage and track all invoices
           </p>
         </div>
-        <Button onClick={() => setCreateOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          New Invoice
-        </Button>
+        {perms.canManageInvoices && (
+          <Button onClick={() => setCreateOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            New Invoice
+          </Button>
+        )}
       </div>
 
       {/* STATS */}

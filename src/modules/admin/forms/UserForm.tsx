@@ -33,18 +33,32 @@ export default function UserForm({
   return (
     <div className="space-y-4">
       <div>
-        <Label>Email</Label>
-        <Input value={email} onChange={(e) => onEmailChange(e.target.value)} />
+        <Label htmlFor="user-email">Email Address *</Label>
+        <Input
+          id="user-email"
+          type="email"
+          placeholder="e.g. user@example.com"
+          value={email}
+          onChange={(e) => onEmailChange(e.target.value)}
+        />
       </div>
 
       <div>
-        <Label>Password</Label>
+        <Label htmlFor="user-password">
+          {mode === 'edit' ? 'Password (leave blank to keep unchanged)' : 'Password *'}
+        </Label>
         <Input
+          id="user-password"
           type="password"
-          placeholder={mode === 'edit' ? 'Leave blank to keep unchanged' : ''}
+          placeholder={mode === 'edit' ? 'Leave blank to keep unchanged' : 'Min 10 chars, 1 uppercase, 1 digit'}
           value={password}
           onChange={(e) => onPasswordChange(e.target.value)}
         />
+        {mode === 'create' && (
+          <p className="text-xs text-muted-foreground mt-1">
+            Minimum 10 characters, must include at least one uppercase letter and one digit.
+          </p>
+        )}
       </div>
 
       <div>
@@ -57,7 +71,7 @@ export default function UserForm({
             <SelectItem value="admin">Admin</SelectItem>
             <SelectItem value="sales">Sales</SelectItem>
             <SelectItem value="inventory">Inventory</SelectItem>
-            <SelectItem value="cashier">cashier</SelectItem>
+            <SelectItem value="cashier">Cashier</SelectItem>
           </SelectContent>
         </Select>
       </div>
