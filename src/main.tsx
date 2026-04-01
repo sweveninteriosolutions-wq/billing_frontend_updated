@@ -15,8 +15,13 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 1,
+      retry: (failureCount, error: any) => {
+        // Don't retry on 4xx (auth/permission errors)
+        if (error?.errorCode === 'UNAUTHORIZED' || error?.errorCode === 'PERMISSION_DENIED') return false;
+        return failureCount < 2;
+      },
       refetchOnWindowFocus: false,
+      staleTime: 30 * 1000,  // 30s default stale time — prevents hammering the API
     },
     mutations: {
       retry: 0,

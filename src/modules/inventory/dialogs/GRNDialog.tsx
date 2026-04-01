@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +20,68 @@ import { useSuppliers } from "@/queries/supplier.queries";
 // 🔴 Global error handling
 import { AppError } from "@/errors/AppError";
 import { useGlobalError } from "@/errors/useGlobalError";
+import { Paperclip, Loader2 } from "lucide-react";
+
+const BASE_URL = import.meta.env.VITE_API_URL as string;
+
+/* =============================================
+   FILE UPLOAD HOOK (for GRN entity type)
+============================================= */
+function useGRNFileUpload(grnId: number | undefined) {
+  const [uploading, setUploading] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState<
+    { id: number; original_filename: string; storage_path: string; mime_type: string }[]
+  >([]);
+  const [loadingFiles, setLoadingFiles] = useState(false);
+
+  // Load existing attachments
+  const loadFiles = async () => {
+    if (!grnId) return;
+    setLoadingFiles(true);
+    try {
+      const token = localStorage.getItem("access_token");
+      const res = await fetch(
+        `${BASE_URL}/files/by-entity?entity_type=grn&entity_id=${grnId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setUploadedFiles(data?.data ?? []);
+      }
+    } catch {
+      // non-fatal
+    } finally {
+      setLoadingFiles(false);
+    }
+  };
+
+  const uploadFile = async (file: File) => {
+    if (!grnId) return;
+    setUploading(true);
+    try {
+      const token = localStorage.getItem("access_token");
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch(
+        `${BASE_URL}/files/upload?entity_type=grn&entity_id=${grnId}`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
+        }
+      );
+      if (res.ok) {
+        await loadFiles();
+      }
+    } catch {
+      // non-fatal
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return { uploading, uploadedFiles, loadingFiles, uploadFile, loadFiles };
+}
 
 type Mode = "create" | "edit" | "view";
 
@@ -47,6 +109,17 @@ export default function GRNDialog({
   const isView = mode === "view";
   const isEdit = mode === "edit";
   const isCreate = mode === "create";
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { uploading, uploadedFiles, loadingFiles, uploadFile, loadFiles } =
+    useGRNFileUpload(isView ? grn?.id : undefined);
+
+  // Load attachments when dialog opens in view mode
+  useEffect(() => {
+    if (open && isView && grn?.id) {
+      loadFiles();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, isView, grn?.id]);
 
   /* =========================
      GLOBAL ERROR HANDLER
@@ -265,6 +338,62 @@ export default function GRNDialog({
                   ₹{grn.summary.total_value}
                 </p>
               </div>
+            </div>
+
+            {/* FILE ATTACHMENTS */}
+            <div className="border-t pt-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="font-semibold">Attachments</p>
+                <div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,application/pdf"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (file) await uploadFile(file);
+                      e.target.value = "";
+                    }}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={uploading}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    {uploading ? (
+                      <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Uploading…</>
+                    ) : (
+                      <><Paperclip className="h-4 w-4 mr-1" /> Attach File</>
+                    )}
+                  </Button>
+                </div>
+              </div>
+              {loadingFiles ? (
+                <p className="text-xs text-muted-foreground">Loading files…</p>
+              ) : uploadedFiles.length === 0 ? (
+                <p className="text-xs text-muted-foreground">No attachments yet.</p>
+              ) : (
+                <ul className="space-y-1">
+                  {uploadedFiles.map((f) => (
+                    <li key={f.id} className="flex items-center gap-2 text-sm">
+                      <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
+                      <a
+                        href={`${BASE_URL}/files/download/${f.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary underline-offset-2 hover:underline truncate max-w-xs"
+                      >
+                        {f.original_filename}
+                      </a>
+                      <Badge variant="secondary" className="text-xs">
+                        {f.mime_type?.split("/")[1]?.toUpperCase()}
+                      </Badge>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
 
             {/* AUDIT */}

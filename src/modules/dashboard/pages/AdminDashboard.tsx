@@ -1,124 +1,196 @@
-import { DollarSign, Package, AlertCircle, Users, TrendingUp, ShoppingCart } from 'lucide-react';
+'use client';
+
+import { DollarSign, Package, AlertCircle, TrendingUp, ShoppingCart, Loader2 } from 'lucide-react';
 import { DashboardCard } from '@/modules/dashboard/components/DashboardCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Badge } from '@/components/ui/badge';
+import {
+  LineChart, Line, BarChart, Bar, XAxis, YAxis,
+  CartesianGrid, Tooltip, ResponsiveContainer,
+} from 'recharts';
+import { format } from 'date-fns';
+import {
+  useDashboardSummary,
+  useDashboardDailySales,
+  useDashboardLowStock,
+} from '@/queries/dashboard.queries';
 
-const salesData = [
-  { month: 'Jan', sales: 45000, orders: 120 },
-  { month: 'Feb', sales: 52000, orders: 145 },
-  { month: 'Mar', sales: 48000, orders: 132 },
-  { month: 'Apr', sales: 61000, orders: 168 },
-  { month: 'May', sales: 55000, orders: 152 },
-  { month: 'Jun', sales: 67000, orders: 189 },
-];
-
-const recentActivity = [
-  { user: 'Cashier User', action: 'Generated invoice #INV-1234', time: '5 mins ago' },
-  { user: 'Sales Executive', action: 'Created quotation for Raj Kumar', time: '12 mins ago' },
-  { user: 'Inventory Manager', action: 'Updated stock for Sofa Set Premium', time: '25 mins ago' },
-  { user: 'Admin User', action: 'Added discount rule: Summer Sale', time: '1 hour ago' },
-];
+const fmtShort = (v: string | number) => {
+  const n = Number(v);
+  if (n >= 10000000) return `₹${(n / 10000000).toFixed(1)}Cr`;
+  if (n >= 100000) return `₹${(n / 100000).toFixed(1)}L`;
+  if (n >= 1000) return `₹${(n / 1000).toFixed(1)}K`;
+  return `₹${n.toFixed(0)}`;
+};
 
 export default function AdminDashboard() {
+  const { data: summary, isLoading: summaryLoading } = useDashboardSummary();
+  const { data: dailySales = [], isLoading: dailyLoading } = useDashboardDailySales();
+  const { data: lowStock = [], isLoading: lowStockLoading } = useDashboardLowStock();
+
+  const chartData = dailySales.map(d => ({
+    day: format(new Date(d.day), 'MMM dd'),
+    revenue: Number(d.revenue),
+    orders: d.count,
+  }));
+
   return (
     <div className="space-y-4 md:space-y-6">
       <div>
         <h1 className="text-2xl md:text-3xl font-bold">Admin Dashboard</h1>
-        <p className="text-sm md:text-base text-muted-foreground">Complete overview of your business operations</p>
+        <p className="text-sm md:text-base text-muted-foreground">
+          Live overview of your business — last 30 days
+        </p>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <DashboardCard
-          title="Total Sales"
-          value="₹3.2L"
-          icon={DollarSign}
-          description="This month"
-          trend={{ value: 12.5, isPositive: true }}
-        />
-        <DashboardCard
-          title="Inventory Value"
-          value="₹8.5L"
-          icon={Package}
-          description="Current stock"
-          trend={{ value: 3.2, isPositive: true }}
-        />
-        <DashboardCard
-          title="Pending Payments"
-          value="₹45K"
-          icon={AlertCircle}
-          description="3 invoices due"
-          trend={{ value: -5.1, isPositive: false }}
-        />
-        <DashboardCard
-          title="Total Customers"
-          value="347"
-          icon={Users}
-          description="Active customers"
-          trend={{ value: 8.3, isPositive: true }}
-        />
-      </div>
+      {summaryLoading ? (
+        <div className="flex justify-center py-6">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <DashboardCard
+            title="Total Revenue"
+            value={fmtShort(summary?.total_revenue ?? 0)}
+            icon={DollarSign}
+            description={`${summary?.invoice_count ?? 0} invoices this month`}
+          />
+          <DashboardCard
+            title="Collected"
+            value={fmtShort(summary?.total_collected ?? 0)}
+            icon={TrendingUp}
+            description="Payments received"
+          />
+          <DashboardCard
+            title="Outstanding"
+            value={fmtShort(summary?.outstanding ?? 0)}
+            icon={AlertCircle}
+            description="Balance due"
+            trend={
+              Number(summary?.outstanding ?? 0) > 0
+                ? { value: 0, isPositive: false }
+                : undefined
+            }
+          />
+          <DashboardCard
+            title="Tax Collected"
+            value={fmtShort(summary?.total_tax ?? 0)}
+            icon={Package}
+            description={`Discounts: ${fmtShort(summary?.total_discounts ?? 0)}`}
+          />
+        </div>
+      )}
 
       {/* Charts */}
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card className="hover-lift">
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base md:text-lg">
               <TrendingUp className="h-4 w-4 md:h-5 md:w-5 text-primary" />
-              Sales Trend
+              Daily Revenue (30 days)
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={salesData}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Line type="monotone" dataKey="sales" stroke="hsl(var(--primary))" strokeWidth={2} />
-              </LineChart>
-            </ResponsiveContainer>
+            {dailyLoading ? (
+              <div className="flex justify-center py-10">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : chartData.length === 0 ? (
+              <p className="text-center text-muted-foreground text-sm py-8">No sales data yet.</p>
+            ) : (
+              <ResponsiveContainer width="100%" height={250}>
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                  <XAxis dataKey="day" tick={{ fontSize: 10 }} />
+                  <YAxis tickFormatter={v => fmtShort(v)} tick={{ fontSize: 10 }} />
+                  <Tooltip formatter={(v: number) => [`₹${v.toLocaleString('en-IN')}`, 'Revenue']} />
+                  <Line
+                    type="monotone"
+                    dataKey="revenue"
+                    stroke="hsl(var(--primary))"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
 
-        <Card className="hover-lift">
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base md:text-lg">
               <ShoppingCart className="h-4 w-4 md:h-5 md:w-5 text-primary" />
-              Order Volume
+              Daily Invoice Count
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={salesData}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="orders" fill="hsl(var(--primary))" />
-              </BarChart>
-            </ResponsiveContainer>
+            {dailyLoading ? (
+              <div className="flex justify-center py-10">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : chartData.length === 0 ? (
+              <p className="text-center text-muted-foreground text-sm py-8">No data.</p>
+            ) : (
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                  <XAxis dataKey="day" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 10 }} />
+                  <Tooltip />
+                  <Bar dataKey="orders" fill="hsl(var(--primary))" radius={[3, 3, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Recent Activity */}
-      <Card className="hover-lift">
+      {/* Low Stock Alerts */}
+      <Card>
         <CardHeader>
-          <CardTitle className="text-base md:text-lg">Recent Activity</CardTitle>
+          <CardTitle className="text-base md:text-lg flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 text-yellow-600" />
+            Low Stock Alerts
+            {!lowStockLoading && lowStock.length > 0 && (
+              <Badge variant="destructive" className="ml-2">{lowStock.length}</Badge>
+            )}
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {recentActivity.map((activity, index) => (
-              <div key={index} className="flex flex-col sm:flex-row items-start sm:justify-between gap-2 border-b border-border pb-4 last:border-0">
-                <div className="flex-1">
-                  <p className="font-medium text-sm md:text-base">{activity.user}</p>
-                  <p className="text-xs md:text-sm text-muted-foreground">{activity.action}</p>
+          {lowStockLoading ? (
+            <div className="flex justify-center py-6">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : lowStock.length === 0 ? (
+            <p className="text-sm text-green-600 font-medium text-center py-4">
+              ✓ All products are sufficiently stocked.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {lowStock.slice(0, 8).map(p => (
+                <div
+                  key={p.product_id}
+                  className="flex items-center justify-between py-2 px-3 rounded-md bg-yellow-50 border border-yellow-200"
+                >
+                  <div>
+                    <p className="font-medium text-sm">{p.name}</p>
+                    <p className="text-xs text-muted-foreground font-mono">{p.sku}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-bold text-destructive">{p.total_stock} left</p>
+                    <p className="text-xs text-muted-foreground">min: {p.min_stock_threshold}</p>
+                  </div>
                 </div>
-                <span className="text-xs text-muted-foreground whitespace-nowrap">{activity.time}</span>
-              </div>
-            ))}
-          </div>
+              ))}
+              {lowStock.length > 8 && (
+                <p className="text-xs text-center text-muted-foreground pt-1">
+                  +{lowStock.length - 8} more items below threshold
+                </p>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

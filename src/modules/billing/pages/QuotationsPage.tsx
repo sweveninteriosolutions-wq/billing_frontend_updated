@@ -1,5 +1,3 @@
-'use client';
-
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 
@@ -18,6 +16,7 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 import { useConfirm } from '@/hooks/useConfirm';
 import { usePagination } from '@/hooks/usePagination';
 import { TablePagination } from '@/components/TablePagination';
+import { StatCard } from '@/components/StatCard';
 
 import { QuotationView } from '@/types/quotation';
 import { AppError } from '@/errors/AppError';
@@ -162,14 +161,14 @@ export default function QuotationPage() {
 
 
       {/* STATS */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <StatCard label="Total Quotations" value={total} />
+        <StatCard label="Drafts" value={drafts} variant="danger" />
+        <StatCard label="Approved" value={approved} variant="success" />
+      </div>
+
       <Card>
         <CardHeader>
-          <div className="grid gap-4 md:grid-cols-3">
-            <Stat label="Total Quotations" value={total} />
-            <Stat label="Drafts" value={drafts} danger />
-            <Stat label="Approved" value={approved} primary />
-          </div>
-        </CardHeader>
 
         <CardContent>
           <QuotationTable
@@ -218,36 +217,4 @@ export default function QuotationPage() {
   );
 }
 
-/* =========================
-   STAT COMPONENT
-========================= */
-function Stat({
-  label,
-  value,
-  danger,
-  primary,
-}: {
-  label: string;
-  value: number;
-  danger?: boolean;
-  primary?: boolean;
-}) {
-  return (
-    <div className="bg-muted/50 rounded-lg p-4">
-      <p className="text-sm text-muted-foreground mb-1">
-        {label}
-      </p>
-      <p
-        className={`text-2xl font-bold ${
-          danger
-            ? 'text-destructive'
-            : primary
-            ? 'text-primary'
-            : ''
-        }`}
-      >
-        {value}
-      </p>
-    </div>
-  );
-}
+

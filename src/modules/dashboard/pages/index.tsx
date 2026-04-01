@@ -20,6 +20,8 @@ export default function Dashboard() {
       return <Navigate to="/dashboard/sales" replace />;
     case "inventory":
       return <Navigate to="/dashboard/inventory" replace />;
+    case "manager":
+      return <Navigate to="/dashboard/manager" replace />;
     default:
       return <Navigate to="/" replace />;
   }

@@ -18,6 +18,10 @@ import {
   Tag,
   ChevronDown,
   DollarSign,
+  Warehouse,
+  Activity,
+  History,
+  Star,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -50,7 +54,7 @@ const navSections: NavSection[] = [
         title: 'Dashboard',
         href: '/dashboard',
         icon: LayoutDashboard,
-        roles: ['admin', 'cashier', 'sales', 'inventory'],
+        roles: ['admin', 'cashier', 'sales', 'inventory', 'manager'],
       },
       {
         title: 'Users',
@@ -61,7 +65,7 @@ const navSections: NavSection[] = [
       {
         title: 'User Activity',
         href: '/admin/activity',
-        icon: Tag,
+        icon: Activity,
         roles: ['admin'],
       },
       {
@@ -74,7 +78,7 @@ const navSections: NavSection[] = [
         title: 'Reports',
         href: '/reports',
         icon: BarChart3,
-        roles: ['admin'],
+        roles: ['admin', 'manager'],
       },
     ],
   },
@@ -86,7 +90,7 @@ const navSections: NavSection[] = [
         title: 'Customers',
         href: '/billing/customers',
         icon: Users,
-        roles: ['admin', 'cashier'],
+        roles: ['admin', 'cashier', 'sales'],
       },
       {
         title: 'Quotations',
@@ -105,6 +109,12 @@ const navSections: NavSection[] = [
         href: '/billing/payments',
         icon: CreditCard,
         roles: ['admin', 'cashier'],
+      },
+      {
+        title: 'Loyalty Tokens',
+        href: '/billing/loyalty-tokens',
+        icon: Star,
+        roles: ['admin', 'cashier', 'manager'],
       },
     ],
   },
@@ -143,15 +153,37 @@ const navSections: NavSection[] = [
         roles: ['admin', 'inventory'],
       },
       {
+        title: 'Purchase Orders',
+        href: '/inventory/purchase-orders',
+        icon: ShoppingCart,
+        roles: ['admin', 'inventory', 'manager'],
+      },
+      {
         title: 'Complaints',
         href: '/inventory/complaints',
         icon: AlertCircle,
         roles: ['admin', 'inventory', 'sales'],
       },
+      {
+        title: 'Movement Log',
+        href: '/inventory/movements',
+        icon: History,
+        roles: ['admin', 'inventory', 'manager'],
+      },
     ],
   },
 
-  
+  {
+    title: 'Settings',
+    items: [
+      {
+        title: 'Warehouses',
+        href: '/settings/warehouses',
+        icon: Warehouse,
+        roles: ['admin'],
+      },
+    ],
+  },
 ];
 
 /* =========================
@@ -170,8 +202,7 @@ export const Sidebar = ({
     Core: true,
     Billing: true,
     Inventory: true,
-    Reports: true,
-    Admin: true,
+    Settings: true,
   });
 
   const toggleSection = (title: string) => {
@@ -238,21 +269,20 @@ export const Sidebar = ({
 
   return (
     <>
-     {/* Mobile Sidebar */}
-<Sheet open={open} onOpenChange={onOpenChange}>
-  <SheetContent
-    side="left"
-    className="w-64 p-0 bg-card overflow-y-auto"
-  >
-    {sidebarContent}
-  </SheetContent>
-</Sheet>
+      {/* Mobile Sidebar */}
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent
+          side="left"
+          className="w-64 p-0 bg-card overflow-y-auto"
+        >
+          {sidebarContent}
+        </SheetContent>
+      </Sheet>
 
-{/* Desktop Sidebar */}
-<aside className="hidden md:block w-64 border-r bg-card overflow-y-auto">
-  {sidebarContent}
-</aside>
-
+      {/* Desktop Sidebar */}
+      <aside className="hidden md:block w-64 border-r bg-card overflow-y-auto">
+        {sidebarContent}
+      </aside>
     </>
   );
 };

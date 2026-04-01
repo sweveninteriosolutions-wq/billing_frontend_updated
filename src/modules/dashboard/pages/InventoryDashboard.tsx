@@ -1,81 +1,58 @@
+// src/modules/dashboard/pages/InventoryDashboard.tsx
 import { Package, AlertTriangle, ArrowLeftRight, Truck } from 'lucide-react';
 import { DashboardCard } from '@/modules/dashboard/components/DashboardCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-
-const stockAlerts = [
-  { product: 'Sofa Set Premium', current: 3, minimum: 5, location: 'Showroom' },
-  { product: 'Dining Table Luxury', current: 2, minimum: 4, location: 'Warehouse' },
-  { product: 'Office Chair Ergonomic', current: 8, minimum: 10, location: 'Showroom' },
-];
-
-const recentTransfers = [
-  { id: 'ST-101', from: 'Warehouse', to: 'Showroom', item: 'Sofa Set', qty: 2, date: '2025-01-10' },
-  { id: 'ST-102', from: 'Showroom', to: 'Warehouse', item: 'Dining Table', qty: 1, date: '2025-01-12' },
-];
-
-const suppliers = [
-  { name: 'Modern Furniture Co.', rating: 4.5, deliveries: 45, onTime: 95 },
-  { name: 'Luxury Interiors Ltd.', rating: 4.8, deliveries: 32, onTime: 98 },
-  { name: 'Premium Woods Inc.', rating: 4.2, deliveries: 28, onTime: 89 },
-];
+import { Skeleton } from '@/components/ui/skeleton';
+import { useDashboardLowStock } from '@/queries/dashboard.queries';
+import { useStockTransfers } from '@/queries/stockTransfer.queries';
+import { useInventoryBalances } from '@/queries/inventoryBalance.queries';
+import { useSuppliers } from '@/queries/supplier.queries';
+import { useProducts } from '@/queries/product.queries';
 
 export default function InventoryDashboard() {
+  const { data: lowStock, isLoading: lowStockLoading } = useDashboardLowStock();
+  const { data: transfers } = useStockTransfers({ page: 1, page_size: 5, status: 'pending' });
+  const { data: balances } = useInventoryBalances({ page: 1, page_size: 1 });
+  const { data: suppliers } = useSuppliers({ page: 1, page_size: 1 });
+  const { data: products } = useProducts({ page: 1, page_size: 1 });
+  const { data: recentTransfers } = useStockTransfers({ page: 1, page_size: 4 });
+
   return (
     <div className="space-y-4 md:space-y-6">
       <div>
         <h1 className="text-2xl md:text-3xl font-bold">Inventory Dashboard</h1>
-        <p className="text-sm md:text-base text-muted-foreground">Control stock, transfers, and supplier coordination</p>
+        <p className="text-sm md:text-base text-muted-foreground">Real-time stock levels, transfers, and supplier summary</p>
       </div>
 
       {/* KPI Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <DashboardCard
-          title="Total Items"
-          value="347"
+          title="Total Products"
+          value={String(products?.total ?? '—')}
           icon={Package}
-          description="In stock"
+          description="In catalog"
         />
         <DashboardCard
           title="Low Stock Alerts"
-          value="12"
+          value={String(lowStock?.length ?? '—')}
           icon={AlertTriangle}
-          description="Need attention"
+          description="Below threshold"
         />
         <DashboardCard
           title="Pending Transfers"
-          value="5"
+          value={String(transfers?.total ?? '—')}
           icon={ArrowLeftRight}
-          description="In transit"
+          description="Awaiting approval"
         />
         <DashboardCard
           title="Active Suppliers"
-          value="24"
+          value={String(suppliers?.total ?? '—')}
           icon={Truck}
-          description="Verified"
+          description="On record"
         />
       </div>
-
-      {/* Quick Actions */}
-      <Card className="hover-lift">
-        <CardHeader>
-          <CardTitle className="text-base md:text-lg">Quick Actions</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col sm:flex-row gap-3 md:gap-4">
-          <Button className="flex-1">
-            <ArrowLeftRight className="mr-2 h-4 w-4" />
-            <span className="text-sm md:text-base">New Transfer</span>
-          </Button>
-          <Button variant="outline" className="flex-1">
-            <span className="text-sm md:text-base">Add Product</span>
-          </Button>
-          <Button variant="outline" className="flex-1">
-            <span className="text-sm md:text-base">Generate GRN</span>
-          </Button>
-        </CardContent>
-      </Card>
 
       {/* Low Stock Alerts */}
       <Card className="hover-lift">
@@ -86,79 +63,79 @@ export default function InventoryDashboard() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {stockAlerts.map((alert, index) => (
-              <div key={index} className="space-y-2 border-b border-border pb-4 last:border-0">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex-1">
-                    <p className="font-medium text-sm md:text-base">{alert.product}</p>
-                    <p className="text-xs md:text-sm text-muted-foreground">{alert.location}</p>
+          {lowStockLoading ? (
+            <div className="space-y-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-16 rounded" />
+              ))}
+            </div>
+          ) : !lowStock?.length ? (
+            <p className="text-sm text-muted-foreground text-center py-4">✅ All products are sufficiently stocked.</p>
+          ) : (
+            <div className="space-y-4">
+              {lowStock.slice(0, 6).map((alert: any) => {
+                const pct = alert.min_stock_threshold > 0
+                  ? Math.min(100, Math.round((alert.total_stock / alert.min_stock_threshold) * 100))
+                  : 0;
+                return (
+                  <div key={alert.product_id} className="space-y-2 border-b border-border pb-4 last:border-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex-1">
+                        <p className="font-medium text-sm md:text-base">{alert.name}</p>
+                        <p className="text-xs md:text-sm text-muted-foreground">{alert.sku}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-destructive text-sm md:text-base whitespace-nowrap">
+                          {alert.total_stock} units
+                        </p>
+                        <p className="text-xs text-muted-foreground">Min: {alert.min_stock_threshold}</p>
+                      </div>
+                    </div>
+                    <Progress value={pct} className="h-2" />
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold text-destructive text-sm md:text-base whitespace-nowrap">{alert.current} units</p>
-                    <p className="text-xs text-muted-foreground">Min: {alert.minimum}</p>
-                  </div>
-                </div>
-                <Progress value={(alert.current / alert.minimum) * 100} className="h-2" />
-                <Button size="sm" variant="outline" className="w-full text-sm">
-                  Reorder
-                </Button>
-              </div>
-            ))}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Recent Transfers */}
+      {/* Recent Stock Transfers */}
       <Card className="hover-lift">
         <CardHeader>
           <CardTitle className="text-base md:text-lg">Recent Stock Transfers</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {recentTransfers.map((transfer) => (
-              <div key={transfer.id} className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 border-b border-border pb-4 last:border-0">
-                <div className="flex-1">
-                  <p className="font-medium text-sm md:text-base">{transfer.id}</p>
-                  <p className="text-xs md:text-sm text-muted-foreground">
-                    {transfer.from} → {transfer.to}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-                  <div className="text-left sm:text-center">
-                    <p className="font-medium text-sm md:text-base">{transfer.item}</p>
-                    <Badge variant="secondary" className="text-xs">Qty: {transfer.qty}</Badge>
+          {!recentTransfers?.items?.length ? (
+            <p className="text-sm text-muted-foreground text-center py-4">No recent transfers.</p>
+          ) : (
+            <div className="space-y-4">
+              {recentTransfers.items.map((t: any) => (
+                <div key={t.id} className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 border-b border-border pb-4 last:border-0">
+                  <div className="flex-1">
+                    <p className="font-medium text-sm md:text-base">ST-{t.id}</p>
+                    <p className="text-xs md:text-sm text-muted-foreground">
+                      {t.from_location_name ?? `Loc #${t.from_location_id}`}
+                      {' → '}
+                      {t.to_location_name ?? `Loc #${t.to_location_id}`}
+                    </p>
                   </div>
-                  <p className="text-xs text-muted-foreground whitespace-nowrap">{transfer.date}</p>
+                  <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                    <div className="text-left sm:text-center">
+                      <p className="font-medium text-sm md:text-base">{t.product_name ?? `Product #${t.product_id}`}</p>
+                      <Badge variant="secondary" className="text-xs">Qty: {t.quantity}</Badge>
+                    </div>
+                    <Badge
+                      variant={t.status === 'completed' ? 'default' : t.status === 'pending' ? 'secondary' : 'outline'}
+                      className="text-xs capitalize"
+                    >
+                      {t.status}
+                    </Badge>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Supplier Performance */}
-      <Card className="hover-lift">
-        <CardHeader>
-          <CardTitle className="text-base md:text-lg">Supplier Performance</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {suppliers.map((supplier, index) => (
-              <div key={index} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-border pb-4 last:border-0">
-                <div className="flex-1">
-                  <p className="font-medium text-sm md:text-base">{supplier.name}</p>
-                  <p className="text-xs md:text-sm text-muted-foreground">{supplier.deliveries} deliveries</p>
-                </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs md:text-sm whitespace-nowrap">⭐ {supplier.rating}</span>
-                  <Badge variant={supplier.onTime >= 95 ? 'default' : 'secondary'} className="text-xs">
-                    {supplier.onTime}% on-time
-                  </Badge>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
