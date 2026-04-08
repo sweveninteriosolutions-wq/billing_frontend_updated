@@ -10,6 +10,7 @@ import {
   SelectItem,
 } from '@/components/ui/select';
 import { UserRole } from '@/types/users';
+import { forwardRef } from 'react';
 
 type Props = {
   email: string;
@@ -21,20 +22,25 @@ type Props = {
   onRoleChange: (v: UserRole) => void;
 };
 
-export default function UserForm({
-  email,
-  password,
-  role,
-  mode,
-  onEmailChange,
-  onPasswordChange,
-  onRoleChange,
-}: Props) {
+const UserForm = forwardRef<HTMLInputElement, Props>(
+  (
+    {
+      email,
+      password,
+      role,
+      mode,
+      onEmailChange,
+      onPasswordChange,
+      onRoleChange,
+    },
+    ref
+  ) => {
   return (
     <div className="space-y-4">
       <div>
         <Label htmlFor="user-email">Email Address *</Label>
         <Input
+          ref={ref}
           id="user-email"
           type="email"
           placeholder="e.g. user@example.com"
@@ -77,4 +83,8 @@ export default function UserForm({
       </div>
     </div>
   );
-}
+});
+
+UserForm.displayName = 'UserForm';
+
+export default UserForm;

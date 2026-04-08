@@ -67,6 +67,20 @@ export default function UserDialog({ open, onOpenChange, mode, user }: Props) {
       toast.error('Password is required for new users');
       return;
     }
+    if (mode === 'create') {
+      if (password.length < 10) {
+        toast.error('Password must be at least 10 characters');
+        return;
+      }
+      if (!/[A-Z]/.test(password)) {
+        toast.error('Password must contain at least one uppercase letter');
+        return;
+      }
+      if (!/\d/.test(password)) {
+        toast.error('Password must contain at least one digit');
+        return;
+      }
+    }
 
     if (mode === 'create') {
       await createUser.mutateAsync({ email, password, role });

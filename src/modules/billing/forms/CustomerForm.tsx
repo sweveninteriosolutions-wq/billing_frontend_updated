@@ -37,13 +37,7 @@ export default function CustomerForm({
       email: '',
       phone: '',
       gstin: '',
-      address: {
-        street: '',
-        city: '',
-        state: '',
-        zip_code: '',
-        country: '',
-      },
+      address: undefined,
     },
   });
 
@@ -60,13 +54,13 @@ export default function CustomerForm({
       email: defaultValues.email ?? '',
       phone: defaultValues.phone ?? '',
       gstin: defaultValues.gstin ?? '',
-      address: {
-        street: defaultValues.address?.street ?? '',
-        city: defaultValues.address?.city ?? '',
-        state: defaultValues.address?.state ?? '',
-        zip_code: defaultValues.address?.zip_code ?? '',
-        country: defaultValues.address?.country ?? '',
-      },
+      address: defaultValues.address ? {
+        street: defaultValues.address.street ?? '',
+        city: defaultValues.address.city ?? '',
+        state: defaultValues.address.state ?? '',
+        zip_code: defaultValues.address.zip_code ?? '',
+        country: defaultValues.address.country ?? '',
+      } : undefined,
     });
   }, [defaultValues, form]);
 
@@ -76,7 +70,17 @@ export default function CustomerForm({
     if (mode === 'create') {
       // Strip gstin — not in CustomerCreate schema
       const { gstin: _g, ...createPayload } = values;
-      onSubmit?.(createPayload as CustomerCreateInput);
+
+      // Strip empty address object
+      const { address } = createPayload;
+      const hasAddress = address && Object.values(address).some(v => v?.trim());
+
+      const payload = {
+        ...createPayload,
+        address: hasAddress ? address : undefined,
+      };
+
+      onSubmit?.(payload as CustomerCreateInput);
     } else {
       onSubmit?.(values as CustomerUpdateInput);
     }
